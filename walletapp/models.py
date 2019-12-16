@@ -8,11 +8,13 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 from rest_framework.authtoken.models import Token
 
-from .consts import (AccountInfoConsts, 
+from walletapp_api import settings
+from .consts import (AccountInfoConsts,
                      DateTimeRangeConsts, InvoiceConsts, UserProfileConsts)
-from walletapp.helpers import generate_code, get_verification_text, send_verification_code, generate_table_token
+from walletapp.helpers import generate_code, get_verification_text, send_verification_code
 from django.dispatch import receiver
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
+
 
 class UserProfile(models.Model):
     """
@@ -21,8 +23,6 @@ class UserProfile(models.Model):
     """
 
     django_user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="user_profile")
-
-    name = models.CharField(max_length=255, blank=True, null=True)
 
     phone_number = models.CharField(max_length=12, validators=[
         RegexValidator(
@@ -41,7 +41,7 @@ class UserProfile(models.Model):
         return token.key
 
     def __str__(self):
-        return "%s (%s %s)" % (self.django_user.username, self.name, self.last_name)
+        return "%s" % (self.django_user.username)
 
 
 class UserProfilePhoneVerificationObjectManager(models.Manager):
@@ -69,6 +69,8 @@ class UserProfilePhoneVerificationObjectManager(models.Manager):
                 created = True
 
         if created:
+            if settings.DEBUG:
+                return {'status': 201, 'obj': obj, 'code': obj.code}
             return {'status': 201, 'obj': obj}
 
         return {'status': 403,
@@ -106,18 +108,18 @@ def send_verification_sms(sender, instance, created, **kwargs):
     if created:
         send_verification_code(instance.user_profile.phone_number, instance.code)
 
-class AccountInfo(models.Model):
-    """
-        Banking Account Information
-    """
 
-    account_holder = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
-
-    account_number = models.CharField(max_length=255)
+class UserTransactionTag(models.Model):
+    user_profile = models.ForeignKey(UserProfile, blank=True, null=True, on_delete=models.CASCADE,
+                                     related_name="user_tags")
+    title = models.CharField(max_length=255)
 
 
 class Transaction(models.Model):
-    sender = models.ForeignKey(UserProfile, blank=True, null=True, on_delete=models.CASCADE, related_name="outgoing_transactions")
-    receiver = models.ForeignKey(UserProfile, blank=True, null=True, on_delete=models.CASCADE, related_name="incoming_transactions")
-    reason = models.TextField()
+    owner = models.ForeignKey(UserProfile, on_delete=models.CASCADE,
+                              related_name="user_transactions")
+    reason = models.TextField(blank=True, null=True)
     amount = models.IntegerField()
+    tags = models.ManyToManyField(UserTransactionTag, blank=True, related_name="user_tag_transactions")
+
+    is_income = models.BooleanField()

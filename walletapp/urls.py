@@ -7,7 +7,8 @@ from rest_framework import permissions
 from rest_framework.authtoken import views
 from rest_framework_swagger.views import get_swagger_view
 
-from walletapp.views import SendVerificationCodeView
+from walletapp.views import SendVerificationCodeView, UserProfileAuthTokenView, RetrieveUserProfileDataView, \
+   TransactionBulkCreateView
 
 schema_view = get_schema_view(
    openapi.Info(
@@ -22,7 +23,9 @@ schema_view = get_schema_view(
 
 urlpatterns = [
    path('user-profile/send-code/', SendVerificationCodeView.as_view()),
-
+   path('user-profile/verify-phone/', UserProfileAuthTokenView.as_view()),
+   path('user-profile/retrieve-data/', RetrieveUserProfileDataView.as_view()),
+   path('transaction/bulk-create/', TransactionBulkCreateView.as_view()),
    # docs
    url(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
    url(r'^swagger/$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
