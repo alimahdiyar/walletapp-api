@@ -2,6 +2,8 @@
 #gunicorn
 walletapp.sock
 
+static
+
 #IDE files
 .vscode
 .idea

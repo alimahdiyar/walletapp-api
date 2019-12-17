@@ -14,7 +14,7 @@ schema_view = get_schema_view(
    openapi.Info(
       title="WalletApp API",
       default_version='development version',
-      description="CafePay API Documentation",
+      description="WalletApp API Documentation",
       contact=openapi.Contact(email="alimahdiyar77@gmail.com"),
    ),
    public=True,
